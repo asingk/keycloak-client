@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Page Title</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+</head>
+<body>
+
+    <!--Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <!-- <a class="navbar-brand" href="#">Navbar</a> -->
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent-4"
+        aria-controls="navbarSupportedContent-4" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink-4" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-th"></i> Aplikasiku </a>
+                    <div class="dropdown-menu dropdown-menu-right dropdown-info" aria-labelledby="navbarDropdownMenuLink-4" id="aplikasiku">
+                    </div>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink-4" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-user"></i> <span id="myprofile"></span> </a>
+                    <div class="dropdown-menu dropdown-menu-right dropdown-info" aria-labelledby="navbarDropdownMenuLink-4">
+                        <a class="dropdown-item" href="http://opensuse.local:8180/auth/realms/uinar/account/" target="_blank">My account</a>
+                        <a class="dropdown-item" href="#" onclick="logout()">Log out</a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <!--/.Navbar -->
+
+    <h1>This is a Heading</h1>
+    <p>This is a paragraph.</p>
+    <button onclick="login()">Login</button>
+    <button onclick="updateToken()">Update token</button>
+    <button onclick="absensi()">Hadir</button>
+    <button onclick="updateAbsen()">Update Absen</button>
+    <button onclick="statusSaatIni()">Status hadir Saat Ini</button>
+
+<!-- Optional JavaScript -->
+	<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+	<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+	<script src="http://opensuse.local:8180/auth/js/keycloak.js"></script>
+	<script>
+        const keycloak = new Keycloak();
+        const loadData = () => {
+            // console.log('subject: ' + keycloak.subject);
+            // console.log('idToken: ' + keycloak.idToken);
+            if(keycloak.token) {
+                console.log('token: ' + keycloak.token);
+                apps(keycloak.token);
+            } 
+            // console.log("username: " + keycloak.idTokenParsed.preferred_username);
+            // console.log("email: " + keycloak.idTokenParsed.email);
+            // console.log("name: " + keycloak.idTokenParsed.name);
+            // console.log("given name: " + keycloak.idTokenParsed.given_name);
+            // console.log("family name: " + keycloak.idTokenParsed.family_name);
+            // console.log("realmAccess: " + JSON.stringify(keycloak.realmAccess))
+			// console.log("roles: " + keycloak.realmAccess['roles'])
+            // console.log("resourceAccess: " + JSON.stringify(keycloak.resourceAccess))
+            const fullName = keycloak.idTokenParsed ? " " + keycloak.idTokenParsed.name + " " : ""
+			$('#myprofile').html(fullName);
+        }
+        keycloak.init({ onLoad: 'check-sso' }).then(loadData);
+        // keycloak.init()
+        // keycloak.loadUserProfile().then(loadData)
+        function login() {
+            keycloak.login()
+        }
+
+        function logout() {
+            keycloak.logout();
+        }
+
+        const absen = (newToken) => {
+            fetch('http://opensuse.local:8089/v3/kehadiran', {
+                method: "POST",
+                headers: {
+                    "Content-type": "application/json;charset=UTF-8",
+                    "Authorization": "Bearer " + newToken
+                    }
+            })
+            .then(response => response.json()) 
+            .then(json => console.log(json))
+            .catch(err => console.log(err));
+        }
+
+        function absensi() {
+            keycloak.updateToken(30).then(function() {
+                console.log('newToken: ' + keycloak.token);
+                absen(keycloak.token);
+            }).catch(function() {
+                alert('Failed to refresh token');
+            });
+        }
+
+        let formData = new FormData();
+        formData.append('id', '60018dcff2a779757d79c1eb');
+
+        const updatePulang= (newToken) => {
+            fetch('http://opensuse.local:8089/v3/kehadiran/jam-pulang', {
+                method: "PATCH",
+                body: formData,
+                headers: {
+                    // "Content-type": undefined,
+                    "Authorization": "Bearer " + newToken
+                    }
+            })
+            .then(response => response.json()) 
+            .then(json => console.log(json))
+            .catch(err => console.log(err));
+        }
+
+        function updateAbsen() {
+            keycloak.updateToken(30).then(function() {
+                console.log('newToken: ' + keycloak.token);
+                updatePulang(keycloak.token);
+            }).catch(function() {
+                alert('Failed to refresh token');
+            });
+        }
+
+        const statusIni = (newToken) => {
+            fetch('http://opensuse.local:8089/v3/kehadiran/status-saat-ini', {
+                method: "GET",
+                headers: {
+                    "Content-type": "application/json;charset=UTF-8",
+                    "Authorization": "Bearer " + newToken
+                    }
+            })
+            .then(response => response.json()) 
+            .then(json => console.log(json))
+            .catch(err => console.log(err));
+        }
+
+        function statusSaatIni() {
+            keycloak.updateToken(30).then(function() {
+                console.log('newToken: ' + keycloak.token);
+                statusIni(keycloak.token);
+            }).catch(function() {
+                alert('Failed to refresh token');
+            });
+        }
+
+        function updateToken() {
+            keycloak.updateToken(30).then(function() {
+                console.log('newToken: ' + keycloak.token);
+                apps(keycloak.token);
+            }).catch(function() {
+                alert('Failed to refresh token');
+            });
+        }
+
+        const apps = (newToken) => {
+            console.log("newToken: " + newToken)
+            fetch('http://opensuse.local:8084/v2/apps/web', {
+                headers: {
+                    "Authorization": "Bearer " + newToken
+                    }
+            })
+            .then(response => response.json()) 
+            .then(json => json.forEach(appendAplikasiku))
+            .catch(err => console.log(err));
+        }
+
+        function appendAplikasiku(item){
+            console.log('masooook dia')
+            console.log(item)
+            const myApp = '<a class="dropdown-item" href="' + item.url +'" target="_blank">' + item.shortName + '</a>'
+            $('#aplikasiku').append(myApp)
+        }
+
+    </script>
+    
+</body>
+</html>
